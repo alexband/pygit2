@@ -312,7 +312,7 @@ Tree_getitem_by_index(Tree *self, PyObject *py_index)
         return NULL;
     }
 
-    return wrap_tree_entry(entry_dup);
+    return wrap_tree_entry(entry);
 }
 
 TreeEntry *
