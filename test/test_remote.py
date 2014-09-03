@@ -61,10 +61,12 @@ class RepositoryTest(utils.RepoTestCase):
         remote = self.repo.remotes[0]
 
         self.assertEqual(REMOTE_NAME, remote.name)
-        remote.name = 'new'
+        problems = remote.rename('new')
+        self.assertEqual([], problems)
         self.assertEqual('new', remote.name)
 
-        self.assertRaisesAssign(ValueError, remote, 'name', '')
+        self.assertRaises(ValueError, remote.rename, '')
+        self.assertRaises(ValueError, remote.rename, None)
 
 
     def test_remote_set_url(self):
@@ -152,7 +154,7 @@ class RepositoryTest(utils.RepoTestCase):
     def test_remote_save(self):
         remote = self.repo.remotes[0]
 
-        remote.name = 'new-name'
+        remote.rename('new-name')
         remote.url = 'http://example.com/test.git'
 
         remote.save()
@@ -189,9 +191,9 @@ class EmptyRepositoryTest(utils.EmptyRepoTestCase):
     def test_fetch(self):
         remote = self.repo.remotes[0]
         stats = remote.fetch()
-        self.assertEqual(stats['received_bytes'], REMOTE_REPO_BYTES)
-        self.assertEqual(stats['indexed_objects'], REMOTE_REPO_OBJECTS)
-        self.assertEqual(stats['received_objects'], REMOTE_REPO_OBJECTS)
+        self.assertEqual(stats.received_bytes, REMOTE_REPO_BYTES)
+        self.assertEqual(stats.indexed_objects, REMOTE_REPO_OBJECTS)
+        self.assertEqual(stats.received_objects, REMOTE_REPO_OBJECTS)
 
     def test_transfer_progress(self):
         self.tp = None
@@ -201,9 +203,9 @@ class EmptyRepositoryTest(utils.EmptyRepoTestCase):
         remote = self.repo.remotes[0]
         remote.transfer_progress = tp_cb
         stats = remote.fetch()
-        self.assertEqual(stats['received_bytes'], self.tp.received_bytes)
-        self.assertEqual(stats['indexed_objects'], self.tp.indexed_objects)
-        self.assertEqual(stats['received_objects'], self.tp.received_objects)
+        self.assertEqual(stats.received_bytes, self.tp.received_bytes)
+        self.assertEqual(stats.indexed_objects, self.tp.indexed_objects)
+        self.assertEqual(stats.received_objects, self.tp.received_objects)
 
     def test_update_tips(self):
         remote = self.repo.remotes[0]

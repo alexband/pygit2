@@ -28,11 +28,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-/* Pypy does not provide this header */
-#ifndef PYPY_VERSION
-# include <osdefs.h>
-#endif
-
 #include <git2.h>
 #include "error.h"
 #include "types.h"
@@ -40,11 +35,6 @@
 #include "repository.h"
 #include "oid.h"
 #include "options.h"
-
-/* FIXME: This is for pypy */
-#ifndef MAXPATHLEN
-# define MAXPATHLEN 1024
-#endif
 
 extern PyObject *GitError;
 
@@ -66,8 +56,6 @@ extern PyTypeObject IndexType;
 extern PyTypeObject IndexEntryType;
 extern PyTypeObject IndexIterType;
 extern PyTypeObject WalkerType;
-extern PyTypeObject ConfigType;
-extern PyTypeObject ConfigIterType;
 extern PyTypeObject ReferenceType;
 extern PyTypeObject RefLogIterType;
 extern PyTypeObject RefLogEntryType;
@@ -75,12 +63,12 @@ extern PyTypeObject BranchType;
 extern PyTypeObject SignatureType;
 extern PyTypeObject RemoteType;
 extern PyTypeObject RefspecType;
-extern PyTypeObject TransferProgressType;
 extern PyTypeObject NoteType;
 extern PyTypeObject NoteIterType;
 extern PyTypeObject BlameType;
 extern PyTypeObject BlameIterType;
 extern PyTypeObject BlameHunkType;
+<<<<<<< HEAD
 
 PyDoc_STRVAR(is_repository__doc__,
   "is_repository(path) -> Boolean\n"
@@ -166,39 +154,9 @@ PyDoc_STRVAR(clone_repository__doc__,
     "  The name of the branch to checkout. None means use the remote's "
     "HEAD.\n");
 
+=======
+>>>>>>> 0.21.0
 
-PyObject *
-clone_repository(PyObject *self, PyObject *args) {
-    git_repository *repo;
-    const char *url;
-    const char *path;
-    unsigned int bare, ignore_cert_errors;
-    const char *remote_name, *checkout_branch;
-    PyObject *credentials = NULL;
-    int err;
-    git_clone_options opts = GIT_CLONE_OPTIONS_INIT;
-
-    if (!PyArg_ParseTuple(args, "zzIIzzO",
-                          &url, &path, &bare, &ignore_cert_errors, &remote_name, &checkout_branch, &credentials))
-        return NULL;
-
-    opts.bare = bare;
-    opts.ignore_cert_errors = ignore_cert_errors;
-    opts.remote_name = remote_name;
-    opts.checkout_branch = checkout_branch;
-
-    if (credentials != Py_None) {
-	    opts.remote_callbacks.credentials = credentials_cb;
-	    opts.remote_callbacks.payload = credentials;
-    }
-
-    err = git_clone(&repo, url, path, &opts);
-    if (err < 0)
-        return Error_set(err);
-
-    git_repository_free(repo);
-    Py_RETURN_NONE;
-};
 
 
 PyDoc_STRVAR(discover_repository__doc__,
@@ -209,22 +167,38 @@ PyDoc_STRVAR(discover_repository__doc__,
 PyObject *
 discover_repository(PyObject *self, PyObject *args)
 {
+    git_buf repo_path = {NULL};
     const char *path;
+<<<<<<< HEAD
     git_buf buf = {0};
+=======
+    PyObject *py_repo_path;
+>>>>>>> 0.21.0
     int across_fs = 0;
     const char *ceiling_dirs = NULL;
-    char repo_path[MAXPATHLEN];
     int err;
 
     if (!PyArg_ParseTuple(args, "s|Is", &path, &across_fs, &ceiling_dirs))
         return NULL;
 
+<<<<<<< HEAD
     err = git_repository_discover(&buf,
             path, across_fs, ceiling_dirs);
     if (err < 0)
         return Error_set_str(err, path);
 
     return to_path(buf.ptr);
+=======
+    memset(&repo_path, 0, sizeof(git_buf));
+    err = git_repository_discover(&repo_path, path, across_fs, ceiling_dirs);
+    if (err < 0)
+        return Error_set_str(err, path);
+
+    py_repo_path = to_path(repo_path.ptr);
+    git_buf_free(&repo_path);
+
+    return py_repo_path;
+>>>>>>> 0.21.0
 };
 
 PyDoc_STRVAR(hashfile__doc__,
@@ -275,9 +249,6 @@ hash(PyObject *self, PyObject *args)
 
 
 PyMethodDef module_methods[] = {
-    {"init_repository", init_repository, METH_VARARGS, init_repository__doc__},
-    {"clone_repository", clone_repository, METH_VARARGS,
-     clone_repository__doc__},
     {"discover_repository", discover_repository, METH_VARARGS,
      discover_repository__doc__},
     {"hashfile", hashfile, METH_VARARGS, hashfile__doc__},
@@ -475,25 +446,6 @@ moduleinit(PyObject* m)
     ADD_CONSTANT_INT(m, GIT_CONFIG_LEVEL_XDG);
     ADD_CONSTANT_INT(m, GIT_CONFIG_LEVEL_SYSTEM);
 
-    INIT_TYPE(ConfigType, NULL, PyType_GenericNew)
-    INIT_TYPE(ConfigIterType, NULL, NULL)
-    ADD_TYPE(m, Config)
-    ADD_TYPE(m, ConfigIter)
-
-    /* Remotes */
-    INIT_TYPE(RemoteType, NULL, NULL)
-    INIT_TYPE(RefspecType, NULL, NULL)
-    INIT_TYPE(TransferProgressType, NULL, NULL)
-    ADD_TYPE(m, Remote)
-    ADD_TYPE(m, Refspec)
-    ADD_TYPE(m, TransferProgress)
-    /* Direction for the refspec */
-    ADD_CONSTANT_INT(m, GIT_DIRECTION_FETCH)
-    ADD_CONSTANT_INT(m, GIT_DIRECTION_PUSH)
-    /* Credential types */
-    ADD_CONSTANT_INT(m, GIT_CREDTYPE_USERPASS_PLAINTEXT)
-    ADD_CONSTANT_INT(m, GIT_CREDTYPE_SSH_KEY)
-
     /* Blame */
     INIT_TYPE(BlameType, NULL, NULL)
     INIT_TYPE(BlameIterType, NULL, NULL)
@@ -506,6 +458,10 @@ moduleinit(PyObject* m)
     ADD_CONSTANT_INT(m, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES)
     ADD_CONSTANT_INT(m, GIT_BLAME_TRACK_COPIES_ANY_COMMIT_COPIES)
 
+<<<<<<< HEAD
+=======
+    /* Merge */
+>>>>>>> 0.21.0
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_NONE)
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_NORMAL)
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_UP_TO_DATE)

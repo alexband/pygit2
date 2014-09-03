@@ -135,19 +135,20 @@ PyObject *
 Branch_remote_name__get__(Branch *self)
 {
     int err;
+    git_buf name = {NULL};
     const char *branch_name;
-    git_buf buf = {0};
     PyObject *py_name;
 
     CHECK_REFERENCE(self);
 
     branch_name = git_reference_name(self->reference);
-    err = git_branch_remote_name(&buf, self->repo->repo, branch_name);
+    err = git_branch_remote_name(&name, self->repo->repo, branch_name);
     if (err < GIT_OK)
         return Error_set(err);
 
-    py_name = to_unicode_n(buf.ptr, buf.size, NULL, NULL);
-    git_buf_free(&buf);
+    py_name = to_unicode(name.ptr, NULL, NULL);
+    git_buf_free(&name);
+
     return py_name;
 }
 
@@ -211,19 +212,21 @@ PyObject *
 Branch_upstream_name__get__(Branch *self)
 {
     int err;
+    git_buf name = {NULL};
     const char *branch_name;
-    git_buf buf = {0};
+
     PyObject *py_name;
 
     CHECK_REFERENCE(self);
 
     branch_name = git_reference_name(self->reference);
-    err = git_branch_upstream_name(&buf, self->repo->repo, branch_name);
+
+    err = git_branch_upstream_name(&name, self->repo->repo, branch_name);
     if (err < GIT_OK)
         return Error_set(err);
 
-    py_name = to_unicode_n(buf.ptr, buf.size, NULL, NULL);
-    git_buf_free(&buf);
+    py_name = to_unicode(name.ptr, NULL, NULL);
+    git_buf_free(&name);
 
     return py_name;
 }

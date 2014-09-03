@@ -54,7 +54,7 @@ RefLogIter_iternext(RefLogIter *self)
 {
     const git_reflog_entry *entry;
     RefLogEntry *py_entry;
-    int err = 0;
+    int err;
 
     if (self->i < self->size) {
         entry = git_reflog_entry_byindex(self->reflog, self->i);
@@ -63,10 +63,11 @@ RefLogIter_iternext(RefLogIter *self)
         py_entry->oid_old = git_oid_allocfmt(git_reflog_entry_id_old(entry));
         py_entry->oid_new = git_oid_allocfmt(git_reflog_entry_id_new(entry));
         py_entry->message = strdup(git_reflog_entry_message(entry));
-        err = git_signature_dup(&py_entry->signature, git_reflog_entry_committer(entry));
-        if (err < 0 ) {
+        err = git_signature_dup(&py_entry->signature,
+                                git_reflog_entry_committer(entry));
+        if (err < 0)
             return Error_set(err);
-        }
+
         ++(self->i);
 
         return (PyObject*) py_entry;
@@ -204,7 +205,10 @@ Reference_resolve(Reference *self, PyObject *args)
 PyDoc_STRVAR(Reference_target__doc__,
     "The reference target: If direct the value will be an Oid object, if it\n"
     "is symbolic it will be an string with the full name of the target\n"
-    "reference.");
+    "reference.\n"
+    "\n"
+    "The target is writable. Setting the Reference's target to another Oid\n"
+    "object will direct the reference to that Oid instead.");
 
 PyObject *
 Reference_target__get__(Reference *self)

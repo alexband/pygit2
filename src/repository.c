@@ -35,10 +35,12 @@
 #include "oid.h"
 #include "note.h"
 #include "repository.h"
-#include "remote.h"
 #include "branch.h"
 #include "blame.h"
+<<<<<<< HEAD
 #include "index.h"
+=======
+>>>>>>> 0.21.0
 #include "signature.h"
 #include <git2/odb_backend.h>
 
@@ -54,7 +56,6 @@ extern PyTypeObject TreeType;
 extern PyTypeObject TreeBuilderType;
 extern PyTypeObject ConfigType;
 extern PyTypeObject DiffType;
-extern PyTypeObject RemoteType;
 extern PyTypeObject ReferenceType;
 extern PyTypeObject NoteType;
 extern PyTypeObject NoteIterType;
@@ -182,21 +183,39 @@ Repository_head__get__(Repository *self)
 }
 
 int
-Repository_head__set__(Repository *self, PyObject *py_refname)
+Repository_head__set__(Repository *self, PyObject *py_val)
 {
     int err;
-    const char *refname;
-    PyObject *trefname;
+    if (PyObject_TypeCheck(py_val, &OidType)) {
+        git_oid oid;
+        py_oid_to_git_oid(py_val, &oid);
+        err = git_repository_set_head_detached(self->repo, &oid, NULL, NULL);
+        if (err < 0) {
+            Error_set(err);
+            return -1;
+        }
+    } else {
+        const char *refname;
+        PyObject *trefname;
 
-    refname = py_str_borrow_c_str(&trefname, py_refname, NULL);
-    if (refname == NULL)
-        return -1;
+        refname = py_str_borrow_c_str(&trefname, py_val, NULL);
+        if (refname == NULL)
+            return -1;
 
+<<<<<<< HEAD
     err = git_repository_set_head(self->repo, refname, NULL, NULL);
     Py_DECREF(trefname);
     if (err < 0) {
         Error_set_str(err, refname);
         return -1;
+=======
+        err = git_repository_set_head(self->repo, refname, NULL, NULL);
+        Py_DECREF(trefname);
+        if (err < 0) {
+            Error_set_str(err, refname);
+            return -1;
+        }
+>>>>>>> 0.21.0
     }
 
     return 0;
@@ -515,43 +534,25 @@ Repository_workdir__get__(Repository *self, void *closure)
     return to_path(c_path);
 }
 
-
-PyDoc_STRVAR(Repository_config__doc__,
-  "Get the configuration file for this repository.\n"
-  "\n"
-  "If a configuration file has not been set, the default config set for the\n"
-  "repository will be returned, including global and system configurations\n"
-  "(if they are available).");
-
-PyObject *
-Repository_config__get__(Repository *self)
+int
+Repository_workdir__set__(Repository *self, PyObject *py_workdir)
 {
     int err;
-    git_config *config;
-    Config *py_config;
+    const char *workdir;
+    PyObject *tworkdir;
 
-    assert(self->repo);
+    workdir = py_str_borrow_c_str(&tworkdir, py_workdir, NULL);
+    if (workdir == NULL)
+        return -1;
 
-    if (self->config == NULL) {
-        err = git_repository_config(&config, self->repo);
-        if (err < 0)
-            return Error_set(err);
-
-        py_config = PyObject_New(Config, &ConfigType);
-        if (py_config == NULL) {
-            git_config_free(config);
-            return NULL;
-        }
-
-        py_config->config = config;
-        self->config = (PyObject*)py_config;
-        /* We need 2 refs here. One is returned, one is kept internally. */
-        Py_INCREF(self->config);
-    } else {
-        Py_INCREF(self->config);
+    err = git_repository_set_workdir(self->repo, workdir, 0 /* update_gitlink */);
+    Py_DECREF(tworkdir);
+    if (err < 0) {
+        Error_set_str(err, workdir);
+        return -1;
     }
 
-    return self->config;
+    return 0;
 }
 
 PyDoc_STRVAR(Repository_merge_base__doc__,
@@ -625,27 +626,70 @@ Repository_merge_analysis(Repository *self, PyObject *py_id)
     return PyLong_FromLong(analysis);
 }
 
+PyDoc_STRVAR(Repository_merge_analysis__doc__,
+  "merge_analysis(id) -> (Integer, Integer)\n"
+  "\n"
+  "Analyzes the given branch and determines the opportunities for merging\n"
+  "them into the HEAD of the repository\n"
+  "\n"
+  "The first returned value is a mixture of the GIT_MERGE_ANALYSIS_NONE, _NORMAL,\n"
+  " _UP_TO_DATE, _FASTFORWARD and _UNBORN flags.\n"
+  "The second value is the user's preference from 'merge.ff'");
+
+PyObject *
+Repository_merge_analysis(Repository *self, PyObject *py_id)
+{
+    int err;
+    size_t len;
+    git_oid id;
+    git_merge_head *merge_head;
+    git_merge_analysis_t analysis;
+    git_merge_preference_t preference;
+
+    len = py_oid_to_git_oid(py_id, &id);
+    if (len == 0)
+        return NULL;
+
+    err = git_merge_head_from_id(&merge_head, self->repo, &id);
+    if (err < 0)
+        return Error_set(err);
+
+    err = git_merge_analysis(&analysis, &preference, self->repo, (const git_merge_head **) &merge_head, 1);
+    git_merge_head_free(merge_head);
+
+    if (err < 0)
+        return Error_set(err);
+
+    return Py_BuildValue("(ii)", analysis, preference);
+}
+
 PyDoc_STRVAR(Repository_merge__doc__,
-  "merge(oid) -> MergeResult\n"
+  "merge(id)\n"
   "\n"
-  "Merges the given oid and returns the MergeResult.\n"
+  "Merges the given id into HEAD.\n"
   "\n"
-  "If the merge is fastforward the MergeResult will contain the new\n"
-  "fastforward oid.\n"
-  "If the branch is uptodate, nothing to merge, the MergeResult will\n"
-  "have the fastforward oid as None.\n"
-  "If the merge is not fastforward the MergeResult will have the status\n"
-  "produced by the merge, even if there are conflicts.");
+  "Merges the given commit(s) into HEAD, writing the results into the\n"
+  "working directory. Any changes are staged for commit and any conflicts\n"
+  "are written to the index. Callers should inspect the repository's\n"
+  "index after this completes, resolve any conflicts and prepare a\n"
+  "commit.");
 
 PyObject *
 Repository_merge(Repository *self, PyObject *py_oid)
 {
     git_merge_head *oid_merge_head;
     git_oid oid;
+<<<<<<< HEAD
     const git_merge_options default_opts = GIT_MERGE_OPTIONS_INIT;
     git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
     int err;
     size_t len;
+=======
+    int err;
+    size_t len;
+    git_merge_options merge_opts = GIT_MERGE_OPTIONS_INIT;
+    git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
+>>>>>>> 0.21.0
 
     len = py_oid_to_git_oid(py_oid, &oid);
     if (len == 0)
@@ -657,12 +701,18 @@ Repository_merge(Repository *self, PyObject *py_oid)
 
     err = git_merge(self->repo,
                     (const git_merge_head **)&oid_merge_head, 1,
+<<<<<<< HEAD
                     &default_opts, &checkout_opts);
+=======
+                    &merge_opts, &checkout_opts);
+
+>>>>>>> 0.21.0
     git_merge_head_free(oid_merge_head);
     if (err < 0)
         return Error_set(err);
 
     Py_RETURN_NONE;
+<<<<<<< HEAD
 }
 
 PyDoc_STRVAR(Repository_merge_commits__doc__,
@@ -684,6 +734,8 @@ Repository_merge_commits(Repository *self, PyObject *args)
         return Error_set(err);
 
     return wrap_index(merge_index, self);
+=======
+>>>>>>> 0.21.0
 }
 
 PyDoc_STRVAR(Repository_walk__doc__,
@@ -973,7 +1025,7 @@ PyDoc_STRVAR(Repository_create_branch__doc__,
   "\n"
   "Examples::\n"
   "\n"
-  "    repo.create_branch('foo', repo.head.hex, force=False)");
+  "    repo.create_branch('foo', repo.head.get_object(), force=False)");
 
 PyObject *
 Repository_create_branch(Repository *self, PyObject *args)
@@ -1122,7 +1174,7 @@ Repository_lookup_reference(Repository *self, PyObject *py_name)
 }
 
 PyDoc_STRVAR(Repository_create_reference_direct__doc__,
-  "git_reference_create(name, target, force) -> Reference\n"
+  "create_reference_direct(name, target, force) -> Reference\n"
   "\n"
   "Create a new reference \"name\" which points to an object.\n"
   "\n"
@@ -1134,7 +1186,7 @@ PyDoc_STRVAR(Repository_create_reference_direct__doc__,
   "\n"
   "Examples::\n"
   "\n"
-  "    repo.git_reference_create('refs/heads/foo', repo.head.hex, False)");
+  "    repo.create_reference_direct('refs/heads/foo', repo.head.target, False)");
 
 PyObject *
 Repository_create_reference_direct(Repository *self,  PyObject *args,
@@ -1161,7 +1213,7 @@ Repository_create_reference_direct(Repository *self,  PyObject *args,
 }
 
 PyDoc_STRVAR(Repository_create_reference_symbolic__doc__,
-  "git_reference_symbolic_create(name, source, force) -> Reference\n"
+  "create_reference_symbolic(name, source, force) -> Reference\n"
   "\n"
   "Create a new reference \"name\" which points to another reference.\n"
   "\n"
@@ -1173,7 +1225,7 @@ PyDoc_STRVAR(Repository_create_reference_symbolic__doc__,
   "\n"
   "Examples::\n"
   "\n"
-  "    repo.git_reference_symbolic_create('refs/tags/foo', 'refs/heads/master', False)");
+  "    repo.create_reference_symbolic('refs/tags/foo', 'refs/heads/master', False)");
 
 PyObject *
 Repository_create_reference_symbolic(Repository *self,  PyObject *args,
@@ -1334,67 +1386,6 @@ Repository_TreeBuilder(Repository *self, PyObject *args)
     return (PyObject*)builder;
 }
 
-
-PyDoc_STRVAR(Repository_create_remote__doc__,
-  "create_remote(name, url) -> Remote\n"
-  "\n"
-  "Creates a new remote.");
-
-PyObject *
-Repository_create_remote(Repository *self, PyObject *args)
-{
-    git_remote *remote;
-    char *name = NULL, *url = NULL;
-    int err;
-
-    if (!PyArg_ParseTuple(args, "ss", &name, &url))
-        return NULL;
-
-    err = git_remote_create(&remote, self->repo, name, url);
-    if (err < 0)
-        return Error_set(err);
-
-    return (PyObject*) wrap_remote(remote, self);
-}
-
-
-PyDoc_STRVAR(Repository_remotes__doc__, "Returns all configured remotes.");
-
-PyObject *
-Repository_remotes__get__(Repository *self)
-{
-    git_strarray remotes;
-    git_remote *remote = NULL;
-    PyObject *py_list = NULL;
-    PyObject *py_remote = NULL;
-    size_t i;
-    int err;
-
-    git_remote_list(&remotes, self->repo);
-
-    py_list = PyList_New(remotes.count);
-    for (i=0; i < remotes.count; ++i) {
-        err = git_remote_load(&remote, self->repo, remotes.strings[i]);
-        if (err < 0)
-            goto cleanup;
-        py_remote = wrap_remote(remote, self);
-        if (py_remote == NULL)
-            goto cleanup;
-        PyList_SetItem(py_list, i, py_remote);
-    }
-
-    git_strarray_free(&remotes);
-    return (PyObject*) py_list;
-
-cleanup:
-    git_strarray_free(&remotes);
-    if (py_list)
-        Py_DECREF(py_list);
-    if (err < 0)
-        return Error_set(err);
-    return NULL;
-}
-
 PyDoc_STRVAR(Repository_default_signature__doc__, "Return the signature according to the repository's configuration");
 
 PyObject *
@@ -1407,6 +1398,14 @@ Repository_default_signature__get__(Repository *self)
         return Error_set(err);
 
     return build_signature(NULL, sig, "utf-8");
+}
+
+PyDoc_STRVAR(Repository__pointer__doc__, "Get the repo's pointer. For internal use only.");
+PyObject *
+Repository__pointer__get__(Repository *self)
+{
+    /* Bytes means a raw buffer */
+    return PyBytes_FromStringAndSize((char *) &self->repo, sizeof(git_repository *));
 }
 
 PyDoc_STRVAR(Repository_checkout_head__doc__,
@@ -1692,7 +1691,6 @@ PyMethodDef Repository_methods[] = {
     METHOD(Repository, revparse_single, METH_O),
     METHOD(Repository, status, METH_NOARGS),
     METHOD(Repository, status_file, METH_O),
-    METHOD(Repository, create_remote, METH_VARARGS),
     METHOD(Repository, checkout_head, METH_VARARGS),
     METHOD(Repository, checkout_index, METH_VARARGS),
     METHOD(Repository, checkout_tree, METH_VARARGS),
@@ -1716,10 +1714,9 @@ PyGetSetDef Repository_getseters[] = {
     GETTER(Repository, head_is_unborn),
     GETTER(Repository, is_empty),
     GETTER(Repository, is_bare),
-    GETTER(Repository, config),
-    GETTER(Repository, workdir),
-    GETTER(Repository, remotes),
+    GETSET(Repository, workdir),
     GETTER(Repository, default_signature),
+    GETTER(Repository, _pointer),
     {NULL}
 };
 
