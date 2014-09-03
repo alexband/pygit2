@@ -219,6 +219,11 @@ classifiers = [
 with codecs.open('README.rst', 'r', 'utf-8') as readme:
     long_description = readme.read()
 
+# This ffi is pygit2.ffi due to the path trick used in the beginning
+# of the file
+from ffi import ffi
+ffi_ext = ffi.verifier.get_extension()
+
 setup(name='pygit2',
       description='Python bindings for libgit2.',
       keywords='git',
@@ -230,10 +235,17 @@ setup(name='pygit2',
       maintainer_email='jdavid.ibp@gmail.com',
       long_description=long_description,
       packages=['pygit2'],
+      package_data={'pygit2': ['decl.h']},
+      install_requires=['cffi'],
       ext_modules=[
           Extension('_pygit2', pygit2_exts,
                     include_dirs=[libgit2_include, 'include'],
                     library_dirs=[libgit2_lib],
+<<<<<<< HEAD
                     libraries=pygit2_libs),
+=======
+                    libraries=['git2']),
+          ffi_ext,
+>>>>>>> 0.21.0
       ],
       cmdclass=cmdclass)

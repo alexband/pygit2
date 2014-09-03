@@ -8,8 +8,8 @@ Index read::
 
     >>> index = repo.index
     >>> index.read()
-    >>> oid = index['path/to/file'].id    # from path to object id
-    >>> blob = repo[oid]                   # from object id to object
+    >>> id = index['path/to/file'].id    # from path to object id
+    >>> blob = repo[id]                  # from object id to object
 
 Iterate over all entries of the index::
 
@@ -25,6 +25,14 @@ Index write::
 Custom entries::
    >>> entry = pygit2.IndexEntry('README.md', blob_id, blob_filemode)
    >>> repo.index.add(entry)
+
+The index fulfills a dual role as the in-memory representation of the
+index file and data structure which represents a flat list of a
+tree. You can use it independently of the index file, e.g.
+
+  >>> index = pygit2.Index()
+  >>> entry = pygit2.IndexEntry('README.md', blob_id, blob_filemode)
+  >>> index.add(entry)
 
 The Index type
 ====================
@@ -43,7 +51,7 @@ The Index type
 The IndexEntry type
 --------------------
 
-.. autoattribute:: pygit2.IndexEntry.oid
+.. autoattribute:: pygit2.IndexEntry.id
 .. autoattribute:: pygit2.IndexEntry.hex
 .. autoattribute:: pygit2.IndexEntry.path
 .. autoattribute:: pygit2.IndexEntry.mode

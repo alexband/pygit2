@@ -42,11 +42,16 @@ from os.path import join, realpath
 from pygit2 import GIT_OBJ_ANY, GIT_OBJ_BLOB, GIT_OBJ_COMMIT
 from pygit2 import GIT_MERGE_ANALYSIS_NONE, GIT_MERGE_ANALYSIS_NORMAL, GIT_MERGE_ANALYSIS_UP_TO_DATE
 from pygit2 import GIT_MERGE_ANALYSIS_FASTFORWARD, GIT_MERGE_ANALYSIS_UNBORN
+<<<<<<< HEAD
 from pygit2 import (
     init_repository, clone_repository, discover_repository,
     Reference, hashfile, is_repository
 )
 from pygit2 import Oid
+=======
+from pygit2 import init_repository, clone_repository, clone_into, discover_repository
+from pygit2 import Oid, Reference, hashfile
+>>>>>>> 0.21.0
 import pygit2
 from . import utils
 
@@ -72,6 +77,15 @@ class RepositoryTest(utils.BareRepoTestCase):
         self.assertEqual(type(head), Reference)
         self.assertFalse(self.repo.head_is_unborn)
         self.assertFalse(self.repo.head_is_detached)
+
+    def test_set_head(self):
+        # Test setting a detatched HEAD.
+        self.repo.head = Oid(hex=PARENT_SHA)
+        self.assertEqual(self.repo.head.target.hex, PARENT_SHA)
+        # And test setting a normal HEAD.
+        self.repo.head = "refs/heads/master"
+        self.assertEqual(self.repo.head.name, "refs/heads/master")
+        self.assertEqual(self.repo.head.target.hex, HEAD_SHA)
 
     def test_read(self):
         self.assertRaises(TypeError, self.repo.read, 123)
@@ -192,6 +206,11 @@ class RepositoryTest_II(utils.RepoTestCase):
         directory = realpath(self.repo.workdir)
         expected = realpath(self.repo_path)
         self.assertEqual(directory, expected)
+
+    def test_set_workdir(self):
+        directory = tempfile.mkdtemp()
+        self.repo.workdir = directory
+        self.assertEqual(realpath(self.repo.workdir), realpath(directory))
 
     def test_checkout_ref(self):
         ref_i18n = self.repo.lookup_reference('refs/heads/i18n')
@@ -316,12 +335,17 @@ class RepositoryTest_III(utils.RepoTestCaseForMerging):
     def test_merge_analysis_uptodate(self):
         branch_head_hex = '5ebeeebb320790caf276b9fc8b24546d63316533'
         branch_id = self.repo.get(branch_head_hex).id
+<<<<<<< HEAD
         analysis = self.repo.merge_analysis(branch_id)
+=======
+        analysis, preference = self.repo.merge_analysis(branch_id)
+>>>>>>> 0.21.0
 
         self.assertTrue(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
         self.assertEqual({}, self.repo.status())
 
+<<<<<<< HEAD
     def test_tree_merge_uptodate(self):
         branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
 
@@ -348,6 +372,12 @@ class RepositoryTest_III(utils.RepoTestCaseForMerging):
         branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
         branch_id = self.repo.get(branch_head_hex).id
         analysis = self.repo.merge_analysis(branch_id)
+=======
+    def test_merge_analysis_fastforward(self):
+        branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
+        branch_id = self.repo.get(branch_head_hex).id
+        analysis, preference = self.repo.merge_analysis(branch_id)
+>>>>>>> 0.21.0
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
         self.assertTrue(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
         self.assertEqual({}, self.repo.status())
@@ -355,19 +385,34 @@ class RepositoryTest_III(utils.RepoTestCaseForMerging):
     def test_merge_no_fastforward_no_conflicts(self):
         branch_head_hex = '03490f16b15a09913edb3a067a3dc67fbb8d41f1'
         branch_id = self.repo.get(branch_head_hex).id
+<<<<<<< HEAD
         analysis = self.repo.merge_analysis(branch_id)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
         # Checking the index works as expected
+=======
+        analysis, preference = self.repo.merge_analysis(branch_id)
+        self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
+        self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
+        # Asking twice to assure the reference counting is correct
+>>>>>>> 0.21.0
         self.assertEqual({}, self.repo.status())
         self.assertEqual({}, self.repo.status())
 
     def test_merge_no_fastforward_conflicts(self):
         branch_head_hex = '1b2bae55ac95a4be3f8983b86cd579226d0eb247'
         branch_id = self.repo.get(branch_head_hex).id
+<<<<<<< HEAD
         analysis = self.repo.merge_analysis(branch_id)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
+=======
+
+        analysis, preference = self.repo.merge_analysis(branch_id)
+        self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
+        self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
+
+>>>>>>> 0.21.0
         self.repo.merge(branch_id)
         status = pygit2.GIT_STATUS_WT_NEW | pygit2.GIT_STATUS_INDEX_DELETED
         # Asking twice to assure the reference counting is correct
@@ -479,6 +524,7 @@ class CloneRepositoryTest(utils.NoRepoTestCase):
         self.assertFalse(repo.is_empty)
         self.assertEqual(repo.remotes[0].name, "custom_remote")
 
+<<<<<<< HEAD
 
     # def test_clone_fetch_spec(self):
     #     repo_path = "./test/data/testrepo.git/"
@@ -489,6 +535,14 @@ class CloneRepositoryTest(utils.NoRepoTestCase):
     #     # fetchspec seems to be going through, but the Repository class is
     #     # not getting it.
     #     # self.assertEqual(repo.remotes[0].fetchspec, "refs/heads/test")
+=======
+    def test_clone_into(self):
+        repo_path = "./test/data/testrepo.git/"
+        repo = init_repository(os.path.join(self._temp_dir, "clone-into"))
+        remote = repo.create_remote("origin", 'file://' + os.path.realpath(repo_path))
+        clone_into(repo, remote)
+        self.assertTrue('refs/remotes/origin/master' in repo.listall_references())
+>>>>>>> 0.21.0
 
     def test_clone_with_credentials(self):
         credentials = pygit2.UserPass("libgit2", "libgit2")
