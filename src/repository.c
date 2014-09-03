@@ -1622,7 +1622,7 @@ PyMethodDef Repository_methods[] = {
     METHOD(Repository, merge_base, METH_VARARGS),
     METHOD(Repository, merge_analysis, METH_O),
     METHOD(Repository, merge, METH_O),
-    METHOD(Repository, merge_commits, METH_VARARGS),
+    /* METHOD(Repository, merge_commits, METH_VARARGS), */
     METHOD(Repository, read, METH_O),
     METHOD(Repository, write, METH_VARARGS),
     METHOD(Repository, create_reference_direct, METH_VARARGS),
