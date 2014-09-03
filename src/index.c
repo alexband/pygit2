@@ -75,6 +75,21 @@ Index_dealloc(Index* self)
     Py_TYPE(self)->tp_free(self);
 }
 
+PyObject *
+wrap_index(git_index *index, Repository *repo)
+{
+    Index *py_index;
+    py_index = PyObject_GC_New(Index, &IndexType);
+    if (py_index) {
+        Py_INCREF(repo);
+        py_index->repo = repo;
+        py_index->index = index;
+        PyObject_GC_Track(py_index);
+        Py_INCREF(py_index);
+    }
+    return (PyObject *)py_index;
+}
+
 int
 Index_traverse(Index *self, visitproc visit, void *arg)
 {
@@ -173,10 +188,15 @@ Index_diff_to_workdir(Index *self, PyObject *args)
 {
     git_diff_options opts = GIT_DIFF_OPTIONS_INIT;
     git_diff *diff;
+    PyObject *py_paths = NULL;
     int err;
 
-    if (!PyArg_ParseTuple(args, "|IHH", &opts.flags, &opts.context_lines,
-                                        &opts.interhunk_lines))
+    if (!PyArg_ParseTuple(args, "|IHHO", &opts.flags, &opts.context_lines,
+                                        &opts.interhunk_lines, &py_paths))
+        return NULL;
+
+    err = py_list_to_opts(py_paths, &opts);
+    if (err < 0)
         return NULL;
 
     err = git_diff_index_to_workdir(
@@ -184,6 +204,8 @@ Index_diff_to_workdir(Index *self, PyObject *args)
             self->repo->repo,
             self->index,
             &opts);
+
+    free_opts_pathspec(py_paths, &opts);
 
     if (err < 0)
         return Error_set(err);
@@ -500,6 +522,21 @@ Index_write_tree(Index *self, PyObject *args)
     return git_oid_to_python(&oid);
 }
 
+PyDoc_STRVAR(Index_has_conflicts__doc__, "True if has conflicts, False if not.");
+
+PyObject *
+Index_has_conflicts__get__(Index *self)
+{
+    if (git_index_has_conflicts(self->index))
+        Py_RETURN_TRUE;
+    Py_RETURN_FALSE;
+}
+
+PyGetSetDef Index_getseters[] = {
+    GETTER(Index, has_conflicts),
+    {NULL}
+};
+
 PyMethodDef Index_methods[] = {
     METHOD(Index, add, METH_VARARGS),
     METHOD(Index, add_all, METH_O),
@@ -566,7 +603,7 @@ PyTypeObject IndexType = {
     0,                                         /* tp_iternext       */
     Index_methods,                             /* tp_methods        */
     0,                                         /* tp_members        */
-    0,                                         /* tp_getset         */
+    Index_getseters,                           /* tp_getset         */
     0,                                         /* tp_base           */
     0,                                         /* tp_dict           */
     0,                                         /* tp_descr_get      */

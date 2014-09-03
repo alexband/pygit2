@@ -204,6 +204,7 @@ Repository_head__set__(Repository *self, PyObject *py_val)
             Error_set_str(err, refname);
             return -1;
         }
+
     }
 
     return 0;
@@ -570,10 +571,14 @@ Repository_merge_base(Repository *self, PyObject *args)
         return NULL;
 
     err = git_merge_base(&oid, self->repo, &oid1, &oid2);
-    if (err < 0)
-        return Error_set(err);
 
-    return git_oid_to_python(&oid);
+    if (err == 0)
+        return git_oid_to_python(&oid);
+
+    if (err == GIT_ENOTFOUND)
+        Py_RETURN_NONE;
+
+    return Error_set(err);
 }
 
 PyDoc_STRVAR(Repository_merge_analysis__doc__,
@@ -652,6 +657,27 @@ Repository_merge(Repository *self, PyObject *py_oid)
 
     Py_RETURN_NONE;
 }
+
+/* PyDoc_STRVAR(Repository_merge_commits__doc__, */
+/*   "merge two git commit, return an index"); */
+
+/* PyObject * */
+/* Repository_merge_commits(Repository *self, PyObject *args) */
+/* { */
+/*     Commit *our_commit, *their_commit; */
+/*     git_merge_options opts = GIT_MERGE_OPTIONS_INIT; */
+/*     git_index *merge_index; */
+/*     int err; */
+
+/*     if (!PyArg_ParseTuple(args, "O!O!", &CommitType, &our_commit, */
+/*                                         &CommitType, &their_commit)) */
+/*         return NULL; */
+/*     err = git_merge_commits(&merge_index, self->repo, our_commit->commit, their_commit->commit, &opts); */
+/*     if (err < 0) */
+/*         return Error_set(err); */
+
+/*     return wrap_index(merge_index, self); */
+/* } */
 
 PyDoc_STRVAR(Repository_walk__doc__,
   "walk(oid[, sort_mode]) -> iterator\n"
@@ -1596,6 +1622,7 @@ PyMethodDef Repository_methods[] = {
     METHOD(Repository, merge_base, METH_VARARGS),
     METHOD(Repository, merge_analysis, METH_O),
     METHOD(Repository, merge, METH_O),
+    /* METHOD(Repository, merge_commits, METH_VARARGS), */
     METHOD(Repository, read, METH_O),
     METHOD(Repository, write, METH_VARARGS),
     METHOD(Repository, create_reference_direct, METH_VARARGS),

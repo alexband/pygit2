@@ -35,11 +35,13 @@ from distutils.core import setup, Extension, Command
 from distutils.command.build import build
 from distutils.command.sdist import sdist
 from distutils import log
+from distutils import ccompiler
 import os
 import shlex
 from subprocess import Popen, PIPE
 import sys
 import unittest
+import shutil
 
 # Read version from local pygit2/version.py without pulling in
 # pygit2/__init__.py
@@ -53,19 +55,63 @@ if sys.version_info[0] == 2:
 else:
     u = str
 
+print('checkout libgit2 source')
+popen = Popen(['git', 'submodule', 'update', '--init'], stdout=PIPE, stderr=PIPE)
+stdoutdata, stderrdata = popen.communicate()
+if popen.returncode != 0:
+    print(stderrdata)
+    sys.exit()
 
+pygit2_libs = ['git2']
 # Use environment variable LIBGIT2 to set your own libgit2 configuration.
 libgit2_path = os.getenv("LIBGIT2")
-if libgit2_path is None:
+if libgit2_path:
+    libgit2_bin = os.path.join(libgit2_path, 'bin')
+    libgit2_include = os.path.join(libgit2_path, 'include')
+    libgit2_lib = os.getenv('LIBGIT2_LIB', os.path.join(libgit2_path, 'lib'))
+else:
     if os.name == 'nt':
         program_files = os.getenv("ProgramFiles")
         libgit2_path = '%s\libgit2' % program_files
     else:
-        libgit2_path = '/usr/local'
-
-libgit2_bin = os.path.join(libgit2_path, 'bin')
-libgit2_include = os.path.join(libgit2_path, 'include')
-libgit2_lib = os.getenv('LIBGIT2_LIB', os.path.join(libgit2_path, 'lib'))
+        compiler = ccompiler.new_compiler()
+        # use libgit2 embed
+        cwd = os.path.dirname(os.path.realpath(__file__))
+        libgit2_dir = os.path.join(cwd, 'vendor', 'libgit2')
+        libgit2_lib_path = cwd + "/libgit2_embed.a"
+        if os.path.isfile(libgit2_lib_path):
+            os.remove(libgit2_lib_path)
+        if not os.path.isfile(libgit2_lib_path):
+            os.chdir(libgit2_dir)
+            print('build libgit2 embed')
+            popen = Popen(['cmake', '.', '-DBUILD_CLAR=OFF', '-DTHREADSAFE=ON',
+                           '-DBUILD_SHARED_LIBS=OFF', '-DCMAKE_C_FLAGS=-fPIC'],
+                           stdout=PIPE, stderr=PIPE)
+            stdoutdata, stderrdata = popen.communicate()
+            if popen.returncode != 0:
+                print(stderrdata)
+                sys.exit()
+            popen = Popen(['cmake', '--build', '.'],
+                           stdout=PIPE, stderr=PIPE)
+            stdoutdata, stderrdata = popen.communicate()
+            if popen.returncode != 0:
+                print(stderrdata)
+                sys.exit()
+            popen = Popen(['make'], stdout=PIPE, stderr=PIPE)
+            stdoutdata, stderrdata = popen.communicate()
+            if popen.returncode != 0:
+                print(stderrdata)
+                sys.exit()
+            shutil.copy('libgit2.a', libgit2_lib_path)
+            os.chdir(cwd)
+        libgit2_bin = ''
+        libgit2_include = os.path.join(libgit2_dir, 'include')
+        libgit2_lib = cwd
+        pygit2_libs = ['git2_embed']
+        if compiler.has_function('clock_gettime', libraries=['rt']):
+            pygit2_libs.append('rt')
+pygit2_libs.append('ssl')
+pygit2_libs.append('crypto')
 pygit2_exts = [os.path.join('src', name) for name in os.listdir('src')
                if name.endswith('.c')]
 
@@ -195,7 +241,7 @@ setup(name='pygit2',
           Extension('_pygit2', pygit2_exts,
                     include_dirs=[libgit2_include, 'include'],
                     library_dirs=[libgit2_lib],
-                    libraries=['git2']),
-          ffi_ext,
+                    libraries=pygit2_libs),
+                    ffi_ext,
       ],
       cmdclass=cmdclass)

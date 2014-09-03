@@ -123,7 +123,6 @@ typedef struct {
     int new_lines;
 } Hunk;
 
-
 /* git_tree_walk , git_treebuilder*/
 SIMPLE_TYPE(TreeBuilder, git_treebuilder, bld)
 

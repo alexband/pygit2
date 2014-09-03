@@ -214,6 +214,7 @@ Branch_upstream_name__get__(Branch *self)
     int err;
     git_buf name = {NULL};
     const char *branch_name;
+
     PyObject *py_name;
 
     CHECK_REFERENCE(self);

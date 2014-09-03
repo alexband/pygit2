@@ -69,7 +69,30 @@ extern PyTypeObject BlameType;
 extern PyTypeObject BlameIterType;
 extern PyTypeObject BlameHunkType;
 
+PyDoc_STRVAR(is_repository__doc__,
+  "is_repository(path) -> Boolean\n"
+  "\n"
+  "Test if the path is a git repository.");
 
+PyObject *
+is_repository(PyObject *self, PyObject *args) {
+    char* path = NULL;
+    int err;
+
+    git_repository *repo;
+
+    if (!PyArg_ParseTuple(args, "s", &path)) {
+        return NULL;
+    }
+
+    err = git_repository_open(&repo, path);
+
+    if (err < 0)
+        Py_RETURN_FALSE;
+
+    git_repository_free(repo);
+    Py_RETURN_TRUE;
+}
 
 PyDoc_STRVAR(discover_repository__doc__,
   "discover_repository(path[, across_fs[, ceiling_dirs]]) -> str\n"
@@ -152,6 +175,7 @@ PyMethodDef module_methods[] = {
      discover_repository__doc__},
     {"hashfile", hashfile, METH_VARARGS, hashfile__doc__},
     {"hash", hash, METH_VARARGS, hash__doc__},
+    {"is_repository", is_repository, METH_VARARGS, is_repository__doc__},
     {"option", option, METH_VARARGS, option__doc__},
     {NULL}
 };

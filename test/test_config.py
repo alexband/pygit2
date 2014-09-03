@@ -111,6 +111,7 @@ class ConfigTest(utils.RepoTestCase):
 
         new_file = open(CONFIG_FILENAME, "w")
         new_file.write("[this]\n\tthat = foobar\n\tthat = foobeer\n")
+        new_file.write("[something \"other\"]\n\there = false")
         new_file.close()
 
         config.add_file(CONFIG_FILENAME, 0)

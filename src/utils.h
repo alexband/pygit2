@@ -114,6 +114,8 @@ to_bytes(const char * value)
 }
 
 char * py_str_to_c_str(PyObject *value, const char *encoding);
+int py_list_to_opts(PyObject *py_paths, git_diff_options *opts);
+int free_opts_pathspec(PyObject *py_paths, git_diff_options *opts);
 const char *py_str_borrow_c_str(PyObject **tvaue, PyObject *value, const char *encoding);
 
 PyObject * get_pylist_from_git_strarray(git_strarray *strarray);

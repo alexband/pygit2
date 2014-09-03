@@ -84,6 +84,57 @@ py_str_borrow_c_str(PyObject **tvalue, PyObject *value, const char *encoding)
     return NULL;
 }
 
+int
+py_list_to_opts(PyObject *py_paths, git_diff_options *opts)
+{
+    int i;
+    int paths_length = 0;
+    PyObject *py_path = NULL;
+
+    if (py_paths == NULL)
+        return 1;
+
+    if (py_paths == Py_None)
+        return 1;
+
+    if (!PyObject_TypeCheck(py_paths, &PyList_Type)) {
+        PyErr_SetObject(PyExc_TypeError, py_paths);
+        return -1;
+    }
+
+    paths_length = PyList_Size(py_paths);
+    for (i = 0; i < paths_length; i++) {
+        py_path = PyList_GetItem(py_paths, i);
+        if (!PyObject_TypeCheck(py_path, &PyString_Type)) {
+            PyErr_SetObject(PyExc_TypeError, py_path);
+            return -1;
+        }
+    }
+
+    opts->pathspec.count = paths_length;
+    opts->pathspec.strings = (char **) PyMem_Malloc(paths_length * sizeof (char *));
+    for (i = 0; i < paths_length; i++) {
+        py_path = PyList_GetItem(py_paths, i);
+        opts->pathspec.strings[i] = PyString_AsString(py_path);
+    }
+
+    return 0;
+}
+
+int
+free_opts_pathspec(PyObject *py_paths, git_diff_options *opts)
+{
+    if (py_paths == NULL)
+        return 1;
+
+    if (py_paths == Py_None)
+        return 1;
+
+    PyMem_Free(opts->pathspec.strings);
+    return 0;
+
+}
+
 /**
  * Converts the (struct) git_strarray to a Python list
  */

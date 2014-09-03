@@ -28,6 +28,7 @@
 # Import from the future
 from __future__ import absolute_import
 
+import os
 import inspect
 import codecs
 from os import path, getenv
@@ -118,5 +119,16 @@ if libgit2_path:
     include_dirs = [path.join(libgit2_path, 'include')]
     library_dirs = [path.join(libgit2_path, 'lib')]
 
-C = ffi.verify("#include <git2.h>", libraries=["git2"],
+    C = ffi.verify("#include <git2.h>", libraries=["git2"],
                include_dirs=include_dirs, library_dirs=library_dirs)
+else:
+    print 'otherwise'
+    cwd = path.dirname(dir_path)
+    libgit2_dir = os.path.join(cwd, 'vendor', 'libgit2')
+    libgit2_lib_path = cwd + "/libgit2_embed.a"
+    libgit2_include = os.path.join(libgit2_dir, 'include')
+    libgit2_lib = cwd
+    print libgit2_lib
+    print libgit2_include
+    C = ffi.verify("#include <git2.h>", libraries=["git2_embed", "ssl", "crypto", "rt"],
+               include_dirs=[libgit2_include], library_dirs=[libgit2_lib])

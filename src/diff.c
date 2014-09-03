@@ -286,6 +286,14 @@ Diff_len(Diff *self)
     return (Py_ssize_t)git_diff_num_deltas(self->list);
 }
 
+PyDoc_STRVAR(Diff_size__doc__, "Returns the number of deltas/patches in this diff.");
+
+PyObject *
+Diff_size__get__(Diff *self)
+{
+    return PyLong_FromSize_t(git_diff_num_deltas(self->list));
+}
+
 PyDoc_STRVAR(Diff_patch__doc__, "Patch diff string.");
 
 PyObject *
@@ -469,6 +477,7 @@ Diff_dealloc(Diff *self)
 
 PyGetSetDef Diff_getseters[] = {
     GETTER(Diff, patch),
+    GETTER(Diff, size),
     {NULL}
 };
 
