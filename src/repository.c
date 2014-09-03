@@ -37,10 +37,6 @@
 #include "repository.h"
 #include "branch.h"
 #include "blame.h"
-<<<<<<< HEAD
-#include "index.h"
-=======
->>>>>>> 0.21.0
 #include "signature.h"
 #include <git2/odb_backend.h>
 
@@ -202,20 +198,13 @@ Repository_head__set__(Repository *self, PyObject *py_val)
         if (refname == NULL)
             return -1;
 
-<<<<<<< HEAD
-    err = git_repository_set_head(self->repo, refname, NULL, NULL);
-    Py_DECREF(trefname);
-    if (err < 0) {
-        Error_set_str(err, refname);
-        return -1;
-=======
         err = git_repository_set_head(self->repo, refname, NULL, NULL);
         Py_DECREF(trefname);
         if (err < 0) {
             Error_set_str(err, refname);
             return -1;
         }
->>>>>>> 0.21.0
+
     }
 
     return 0;
@@ -679,17 +668,10 @@ Repository_merge(Repository *self, PyObject *py_oid)
 {
     git_merge_head *oid_merge_head;
     git_oid oid;
-<<<<<<< HEAD
-    const git_merge_options default_opts = GIT_MERGE_OPTIONS_INIT;
-    git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
-    int err;
-    size_t len;
-=======
     int err;
     size_t len;
     git_merge_options merge_opts = GIT_MERGE_OPTIONS_INIT;
     git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
->>>>>>> 0.21.0
 
     len = py_oid_to_git_oid(py_oid, &oid);
     if (len == 0)
@@ -701,42 +683,35 @@ Repository_merge(Repository *self, PyObject *py_oid)
 
     err = git_merge(self->repo,
                     (const git_merge_head **)&oid_merge_head, 1,
-<<<<<<< HEAD
-                    &default_opts, &checkout_opts);
-=======
                     &merge_opts, &checkout_opts);
 
->>>>>>> 0.21.0
     git_merge_head_free(oid_merge_head);
     if (err < 0)
         return Error_set(err);
 
     Py_RETURN_NONE;
-<<<<<<< HEAD
 }
 
-PyDoc_STRVAR(Repository_merge_commits__doc__,
-  "merge two git commit, return an index");
+/* PyDoc_STRVAR(Repository_merge_commits__doc__, */
+/*   "merge two git commit, return an index"); */
 
-PyObject *
-Repository_merge_commits(Repository *self, PyObject *args)
-{
-    Commit *our_commit, *their_commit;
-    git_merge_options opts = GIT_MERGE_OPTIONS_INIT;
-    git_index *merge_index;
-    int err;
+/* PyObject * */
+/* Repository_merge_commits(Repository *self, PyObject *args) */
+/* { */
+/*     Commit *our_commit, *their_commit; */
+/*     git_merge_options opts = GIT_MERGE_OPTIONS_INIT; */
+/*     git_index *merge_index; */
+/*     int err; */
 
-    if (!PyArg_ParseTuple(args, "O!O!", &CommitType, &our_commit,
-                                        &CommitType, &their_commit))
-        return NULL;
-    err = git_merge_commits(&merge_index, self->repo, our_commit->commit, their_commit->commit, &opts);
-    if (err < 0)
-        return Error_set(err);
+/*     if (!PyArg_ParseTuple(args, "O!O!", &CommitType, &our_commit, */
+/*                                         &CommitType, &their_commit)) */
+/*         return NULL; */
+/*     err = git_merge_commits(&merge_index, self->repo, our_commit->commit, their_commit->commit, &opts); */
+/*     if (err < 0) */
+/*         return Error_set(err); */
 
-    return wrap_index(merge_index, self);
-=======
->>>>>>> 0.21.0
-}
+/*     return wrap_index(merge_index, self); */
+/* } */
 
 PyDoc_STRVAR(Repository_walk__doc__,
   "walk(oid[, sort_mode]) -> iterator\n"

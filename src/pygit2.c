@@ -68,7 +68,6 @@ extern PyTypeObject NoteIterType;
 extern PyTypeObject BlameType;
 extern PyTypeObject BlameIterType;
 extern PyTypeObject BlameHunkType;
-<<<<<<< HEAD
 
 PyDoc_STRVAR(is_repository__doc__,
   "is_repository(path) -> Boolean\n"
@@ -95,70 +94,6 @@ is_repository(PyObject *self, PyObject *args) {
     Py_RETURN_TRUE;
 }
 
-PyDoc_STRVAR(init_repository__doc__,
-    "init_repository(path, bare)\n"
-    "\n"
-    "Creates a new Git repository in the given path.\n"
-    "\n"
-    "Arguments:\n"
-    "\n"
-    "path\n"
-    "  Path where to create the repository.\n"
-    "\n"
-    "bare\n"
-    "  Whether the repository will be bare or not.\n");
-
-PyObject *
-init_repository(PyObject *self, PyObject *args) {
-    git_repository *repo;
-    const char *path;
-    unsigned int bare;
-    int err;
-
-    if (!PyArg_ParseTuple(args, "sI", &path, &bare))
-        return NULL;
-
-    err = git_repository_init(&repo, path, bare);
-    if (err < 0)
-        return Error_set_str(err, path);
-
-    git_repository_free(repo);
-    Py_RETURN_NONE;
-};
-
-static int
-credentials_cb(git_cred **out, const char *url, const char *username_from_url, unsigned int allowed_types, void *data)
-{
-    PyObject *credentials = (PyObject *) data;
-
-    return callable_to_credentials(out, url, username_from_url, allowed_types, credentials);
-}
-
-PyDoc_STRVAR(clone_repository__doc__,
-    "clone_repository(url, path, bare, remote_name, checkout_branch)\n"
-    "\n"
-    "Clones a Git repository in the given url to the given path "
-    "with the specified options.\n"
-    "\n"
-    "Arguments:\n"
-    "\n"
-    "url\n"
-    "  Git repository remote url.\n"
-    "path\n"
-    "  Path where to create the repository.\n"
-    "bare\n"
-    "  If 'bare' is not 0, then a bare git repository will be created.\n"
-    "remote_name\n"
-    "  The name given to the 'origin' remote.  The default is 'origin'.\n"
-    "checkout_branch\n"
-    "  The name of the branch to checkout. None means use the remote's "
-    "HEAD.\n");
-
-=======
->>>>>>> 0.21.0
-
-
-
 PyDoc_STRVAR(discover_repository__doc__,
   "discover_repository(path[, across_fs[, ceiling_dirs]]) -> str\n"
   "\n"
@@ -169,11 +104,7 @@ discover_repository(PyObject *self, PyObject *args)
 {
     git_buf repo_path = {NULL};
     const char *path;
-<<<<<<< HEAD
-    git_buf buf = {0};
-=======
     PyObject *py_repo_path;
->>>>>>> 0.21.0
     int across_fs = 0;
     const char *ceiling_dirs = NULL;
     int err;
@@ -181,14 +112,6 @@ discover_repository(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s|Is", &path, &across_fs, &ceiling_dirs))
         return NULL;
 
-<<<<<<< HEAD
-    err = git_repository_discover(&buf,
-            path, across_fs, ceiling_dirs);
-    if (err < 0)
-        return Error_set_str(err, path);
-
-    return to_path(buf.ptr);
-=======
     memset(&repo_path, 0, sizeof(git_buf));
     err = git_repository_discover(&repo_path, path, across_fs, ceiling_dirs);
     if (err < 0)
@@ -198,7 +121,6 @@ discover_repository(PyObject *self, PyObject *args)
     git_buf_free(&repo_path);
 
     return py_repo_path;
->>>>>>> 0.21.0
 };
 
 PyDoc_STRVAR(hashfile__doc__,
@@ -458,10 +380,7 @@ moduleinit(PyObject* m)
     ADD_CONSTANT_INT(m, GIT_BLAME_TRACK_COPIES_SAME_COMMIT_COPIES)
     ADD_CONSTANT_INT(m, GIT_BLAME_TRACK_COPIES_ANY_COMMIT_COPIES)
 
-<<<<<<< HEAD
-=======
     /* Merge */
->>>>>>> 0.21.0
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_NONE)
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_NORMAL)
     ADD_CONSTANT_INT(m, GIT_MERGE_ANALYSIS_UP_TO_DATE)

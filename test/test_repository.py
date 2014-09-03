@@ -42,16 +42,12 @@ from os.path import join, realpath
 from pygit2 import GIT_OBJ_ANY, GIT_OBJ_BLOB, GIT_OBJ_COMMIT
 from pygit2 import GIT_MERGE_ANALYSIS_NONE, GIT_MERGE_ANALYSIS_NORMAL, GIT_MERGE_ANALYSIS_UP_TO_DATE
 from pygit2 import GIT_MERGE_ANALYSIS_FASTFORWARD, GIT_MERGE_ANALYSIS_UNBORN
-<<<<<<< HEAD
-from pygit2 import (
-    init_repository, clone_repository, discover_repository,
-    Reference, hashfile, is_repository
-)
+
 from pygit2 import Oid
-=======
+
 from pygit2 import init_repository, clone_repository, clone_into, discover_repository
-from pygit2 import Oid, Reference, hashfile
->>>>>>> 0.21.0
+from pygit2 import Oid, Reference, hashfile, is_repository
+
 import pygit2
 from . import utils
 
@@ -335,49 +331,43 @@ class RepositoryTest_III(utils.RepoTestCaseForMerging):
     def test_merge_analysis_uptodate(self):
         branch_head_hex = '5ebeeebb320790caf276b9fc8b24546d63316533'
         branch_id = self.repo.get(branch_head_hex).id
-<<<<<<< HEAD
-        analysis = self.repo.merge_analysis(branch_id)
-=======
         analysis, preference = self.repo.merge_analysis(branch_id)
->>>>>>> 0.21.0
 
         self.assertTrue(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
         self.assertEqual({}, self.repo.status())
 
-<<<<<<< HEAD
-    def test_tree_merge_uptodate(self):
-        branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
+#     def test_tree_merge_uptodate(self):
+#         branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
 
-        branch = self.repo.get(branch_head_hex)
-        branch_tree = branch.tree
-        merge_base = self.repo.merge_base(
-            branch_head_hex,
-            self.repo.head.target.hex)
-        merge_base_tree = self.repo.get(merge_base.hex).tree
-        head_tree = self.repo.get(self.repo.head.target.hex).tree
-        merge_index = head_tree.merge(branch_tree, merge_base_tree)
-        self.assertTrue(merge_index)
-        self.assertFalse(merge_index.has_conflicts)
+#         branch = self.repo.get(branch_head_hex)
+#         branch_tree = branch.tree
+#         merge_base = self.repo.merge_base(
+#             branch_head_hex,
+#             self.repo.head.target.hex)
+#         merge_base_tree = self.repo.get(merge_base.hex).tree
+#         head_tree = self.repo.get(self.repo.head.target.hex).tree
+#         merge_index = head_tree.merge(branch_tree, merge_base_tree)
+#         self.assertTrue(merge_index)
+#         self.assertFalse(merge_index.has_conflicts)
 
-    def test_repo_merge_uptodate(self):
-        branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
-        branch_commit = self.repo.get(branch_head_hex)
-        head_commit = self.repo.get(self.repo.head.target.hex)
-        merge_index = self.repo.merge_commits(head_commit, branch_commit)
-        self.assertTrue(merge_index)
-        self.assertFalse(merge_index.has_conflicts)
+#     def test_repo_merge_uptodate(self):
+#         branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
+#         branch_commit = self.repo.get(branch_head_hex)
+#         head_commit = self.repo.get(self.repo.head.target.hex)
+#         merge_index = self.repo.merge_commits(head_commit, branch_commit)
+#         self.assertTrue(merge_index)
+#         self.assertFalse(merge_index.has_conflicts)
 
-    def test_merge_analysis_fastforward(self):
-        branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
-        branch_id = self.repo.get(branch_head_hex).id
-        analysis = self.repo.merge_analysis(branch_id)
-=======
+#     def test_merge_analysis_fastforward(self):
+#         branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
+#         branch_id = self.repo.get(branch_head_hex).id
+#         analysis = self.repo.merge_analysis(branch_id)
+
     def test_merge_analysis_fastforward(self):
         branch_head_hex = 'e97b4cfd5db0fb4ebabf4f203979ca4e5d1c7c87'
         branch_id = self.repo.get(branch_head_hex).id
         analysis, preference = self.repo.merge_analysis(branch_id)
->>>>>>> 0.21.0
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
         self.assertTrue(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
         self.assertEqual({}, self.repo.status())
@@ -385,34 +375,20 @@ class RepositoryTest_III(utils.RepoTestCaseForMerging):
     def test_merge_no_fastforward_no_conflicts(self):
         branch_head_hex = '03490f16b15a09913edb3a067a3dc67fbb8d41f1'
         branch_id = self.repo.get(branch_head_hex).id
-<<<<<<< HEAD
-        analysis = self.repo.merge_analysis(branch_id)
-        self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
-        self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
-        # Checking the index works as expected
-=======
         analysis, preference = self.repo.merge_analysis(branch_id)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
         # Asking twice to assure the reference counting is correct
->>>>>>> 0.21.0
         self.assertEqual({}, self.repo.status())
         self.assertEqual({}, self.repo.status())
 
     def test_merge_no_fastforward_conflicts(self):
         branch_head_hex = '1b2bae55ac95a4be3f8983b86cd579226d0eb247'
         branch_id = self.repo.get(branch_head_hex).id
-<<<<<<< HEAD
-        analysis = self.repo.merge_analysis(branch_id)
-        self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
-        self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
-=======
-
         analysis, preference = self.repo.merge_analysis(branch_id)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_UP_TO_DATE)
         self.assertFalse(analysis & GIT_MERGE_ANALYSIS_FASTFORWARD)
 
->>>>>>> 0.21.0
         self.repo.merge(branch_id)
         status = pygit2.GIT_STATUS_WT_NEW | pygit2.GIT_STATUS_INDEX_DELETED
         # Asking twice to assure the reference counting is correct
@@ -524,8 +500,6 @@ class CloneRepositoryTest(utils.NoRepoTestCase):
         self.assertFalse(repo.is_empty)
         self.assertEqual(repo.remotes[0].name, "custom_remote")
 
-<<<<<<< HEAD
-
     # def test_clone_fetch_spec(self):
     #     repo_path = "./test/data/testrepo.git/"
     #     repo = clone_repository(
@@ -535,14 +509,13 @@ class CloneRepositoryTest(utils.NoRepoTestCase):
     #     # fetchspec seems to be going through, but the Repository class is
     #     # not getting it.
     #     # self.assertEqual(repo.remotes[0].fetchspec, "refs/heads/test")
-=======
+    
     def test_clone_into(self):
         repo_path = "./test/data/testrepo.git/"
         repo = init_repository(os.path.join(self._temp_dir, "clone-into"))
         remote = repo.create_remote("origin", 'file://' + os.path.realpath(repo_path))
         clone_into(repo, remote)
         self.assertTrue('refs/remotes/origin/master' in repo.listall_references())
->>>>>>> 0.21.0
 
     def test_clone_with_credentials(self):
         credentials = pygit2.UserPass("libgit2", "libgit2")
